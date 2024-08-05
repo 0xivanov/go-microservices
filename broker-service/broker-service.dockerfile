@@ -1,21 +1,16 @@
-# base go image
-FROM golang:1.18-alpine as builder
+FROM golang:1.21-alpine
+
+EXPOSE 4000 80
+
+# COPY go.mod go.sum ./
+# RUN go mod download
+# COPY . .
 
 RUN mkdir /app
 
-COPY . /app
+COPY brokerApp /app
 
-WORKDIR /app
+RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
 
-RUN CGO_ENABLED=0 go build -o brokerApp ./cmd/api
 
-RUN chmod +x /app/brokerApp
-
-# build a tiny docker image
-FROM alpine:latest
-
-RUN mkdir /app
-
-COPY --from=builder /app/brokerApp /app
-
-CMD [ "/app/brokerApp" ]
+CMD ["/app/brokerApp"]
